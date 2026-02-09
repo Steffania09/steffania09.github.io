@@ -85,7 +85,7 @@ button {
 <div class="container" id="mainContainer">
     <h1>Hi, Babe 🤍</h1>
 
-    <img id="mainGif" src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif" alt="gif">
+    <img id="mainGif" src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif">
 
     <p>
         Every 14th has always been ours.
@@ -116,25 +116,10 @@ document.addEventListener("DOMContentLoaded", function() {
     audio.volume = 0.8;
     audio.playsInline = true;
 
+    // 0 = Valentine question (NO dodges)
+    // 1 = Availability question
+    // 2 = Not available
     let stage = 0;
-    let noCount = 0;
-
-    const responses = [
-        "Luh ang pride oh 😌",
-        "RN ka na nyan ah pero di alam ang tamang sagot 🩺",
-        "Nurse ka diba? 🤨",
-        "Isa pang NO mo magtatampo na talaga ako 🥺",
-        "Bahala ka magtatampo na talaga ako 😤",
-        "Wala ka na magagawa 😜 Click YES na!"
-    ];
-
-    const sadGifs = [
-        "https://media.giphy.com/media/ROF8OQvDmxytW/giphy.gif",
-        "https://media.giphy.com/media/OPU6wzx8JrHna/giphy.gif",
-        "https://media.giphy.com/media/9Y5BbDSkSTiY8/giphy.gif",
-        "https://media.giphy.com/media/ISOckXUybVfQ4/giphy.gif",
-        "https://media1.tenor.com/m/vSx_SAt2dZ4AAAAd/bye.gif"
-    ];
 
     const happyGif = "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif";
 
@@ -153,9 +138,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function showAvailabilityQuestion() {
         stage = 1;
+
         noBtn.style.display = "inline-block";
         noBtn.style.transform = "translate(0px, 0px)";
         yesBtn.style.transform = "scale(1)";
+
         yesBtn.textContent = "Yes, I'm free 🤍";
         noBtn.textContent = "Not that day";
 
@@ -165,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function() {
         `;
     }
 
-    function showFinalScreen() {
+    function showFinalScreen(isAvailable) {
         audio.play().catch(() => {});
         container.style.opacity = "0";
 
@@ -180,11 +167,23 @@ document.addEventListener("DOMContentLoaded", function() {
                     We’ve always liked going out in the late afternoon —
                     when it’s cooler, calmer, and we can just take our time.
                     <br><br>
-                    No fixed plans, no rush.
-                    Just walking around Binondo,
-                    looking for good food and enjoying the moment together.
-                    <br><br>
-                    So… <strong>can I take you on a Binondo date?</strong> 🤍
+                    ${
+                        isAvailable
+                        ? `
+                        No fixed plans, no rush.
+                        Just walking around Binondo,
+                        looking for good food and enjoying the moment together.
+                        <br><br>
+                        <strong>I’d love to take you on a Binondo date 🤍</strong>
+                        `
+                        : `
+                        There’s no rush at all.
+                        You can always tell me whenever you’re free,
+                        and we’ll make time for it together.
+                        <br><br>
+                        <strong>I’d still love to take you on a Binondo date 🤍</strong>
+                        `
+                    }
                 </p>
 
                 <div class="gallery">
@@ -199,6 +198,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     noBtn.addEventListener("click", function() {
 
+        // Stage 0: NO dodges
+        if (stage === 0) {
+            const randomX = Math.floor(Math.random() * 200) - 100;
+            const randomY = Math.floor(Math.random() * 100) - 50;
+            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+            return;
+        }
+
+        // Stage 1: Not available
         if (stage === 1) {
             stage = 2;
             changeGif(happyGif);
@@ -212,29 +220,8 @@ document.addEventListener("DOMContentLoaded", function() {
             `;
 
             noBtn.style.display = "none";
-            yesBtn.textContent = "Okay, let's pick another day 🤍";
+            yesBtn.textContent = "Okay 🤍";
             yesBtn.style.transform = "scale(1.1)";
-            return;
-        }
-
-        if (stage === 0) {
-            noCount++;
-            const index = Math.min(noCount - 1, responses.length - 1);
-            message.textContent = responses[index];
-            changeGif(sadGifs[Math.min(index, sadGifs.length - 1)]);
-
-            if (noCount >= responses.length) {
-                noBtn.style.display = "none";
-                yesBtn.style.transform = "scale(1.5)";
-                changeGif(happyGif);
-                return;
-            }
-
-            const randomX = Math.floor(Math.random() * 200) - 100;
-            const randomY = Math.floor(Math.random() * 100) - 50;
-
-            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
-            yesBtn.style.transform = `scale(${1 + noCount * 0.1})`;
         }
     });
 
@@ -246,8 +233,13 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        if (stage === 1 || stage === 2) {
-            showFinalScreen();
+        if (stage === 1) {
+            showFinalScreen(true);
+            return;
+        }
+
+        if (stage === 2) {
+            showFinalScreen(false);
         }
     });
 
