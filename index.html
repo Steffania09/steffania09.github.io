@@ -23,6 +23,7 @@ img {
     width: 220px;
     border-radius: 12px;
     margin: 15px 0;
+    touch-action: manipulation;
 }
 
 .gallery img {
@@ -103,6 +104,7 @@ button {
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+
     const noBtn = document.getElementById("noBtn");
     const yesBtn = document.getElementById("yesBtn");
     const message = document.getElementById("message");
@@ -114,11 +116,7 @@ document.addEventListener("DOMContentLoaded", function() {
     audio.volume = 0.8;
     audio.playsInline = true;
 
-    // 0 = initial Valentine question
-    // 1 = availability question
-    // 2 = after "not free" reassurance (single yes proceeds)
     let stage = 0;
-
     let noCount = 0;
 
     const responses = [
@@ -140,6 +138,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const happyGif = "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif";
 
+    function changeGif(url) {
+        gif.src = url + "?v=" + Date.now();
+    }
+
     function spawnHeart() {
         const heart = document.createElement("div");
         heart.className = "heart";
@@ -151,12 +153,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function showAvailabilityQuestion() {
         stage = 1;
-
-        // Make sure NO is available here even if it was previously removed
         noBtn.style.display = "inline-block";
         noBtn.style.transform = "translate(0px, 0px)";
         yesBtn.style.transform = "scale(1)";
-
         yesBtn.textContent = "Yes, I'm free 🤍";
         noBtn.textContent = "Not that day";
 
@@ -174,24 +173,24 @@ document.addEventListener("DOMContentLoaded", function() {
             container.innerHTML = `
                 <h1 style="color:#ff6f91;">Happy Valentine’s & Monthsary in Advance 🤍</h1>
 
-<p style="max-width:350px; margin:20px auto; line-height:1.7;">
-    You know we don’t usually celebrate on February 14,
-    because crowded places were never really our thing.
-    <br><br>
-    We’ve always liked going out in the late afternoon —
-    when it’s cooler, calmer, and we can just take our time.
-    <br><br>
-    No fixed plans, no rush.
-    Just walking around Binondo,
-    looking for good food and enjoying the moment together.
-    <br><br>
-    So… <strong>can I take you on a Binondo date?</strong> 🤍
-</p>
+                <p style="max-width:350px; margin:20px auto; line-height:1.7;">
+                    You know we don’t usually celebrate on February 14,
+                    because crowded places were never really our thing.
+                    <br><br>
+                    We’ve always liked going out in the late afternoon —
+                    when it’s cooler, calmer, and we can just take our time.
+                    <br><br>
+                    No fixed plans, no rush.
+                    Just walking around Binondo,
+                    looking for good food and enjoying the moment together.
+                    <br><br>
+                    So… <strong>can I take you on a Binondo date?</strong> 🤍
+                </p>
 
                 <div class="gallery">
-                    <img src="https://anchorland.com.ph/wp-content/uploads/2023/01/shutterstock_1846594648-1-768x513.jpg" alt="image1">
-                    <img src="https://hungrytwotravel.com/wp-content/uploads/2023/07/Binondo-Chinatown-Manila-shanghai-fried-siopao-1024x683.jpg" alt="image2">
-                    <img src="https://hungrytwotravel.com/wp-content/uploads/2023/07/Binondo-Chinatown-Manila-eng-bee-tin-1024x683.jpg" alt="image3">
+                    <img src="https://anchorland.com.ph/wp-content/uploads/2023/01/shutterstock_1846594648-1-768x513.jpg">
+                    <img src="https://hungrytwotravel.com/wp-content/uploads/2023/07/Binondo-Chinatown-Manila-shanghai-fried-siopao-1024x683.jpg">
+                    <img src="https://hungrytwotravel.com/wp-content/uploads/2023/07/Binondo-Chinatown-Manila-eng-bee-tin-1024x683.jpg">
                 </div>
             `;
             container.style.opacity = "1";
@@ -199,11 +198,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     noBtn.addEventListener("click", function() {
-        // If we're on the availability question, NO means "not free"
+
         if (stage === 1) {
             stage = 2;
-
-            gif.src = happyGif;
+            changeGif(happyGif);
 
             message.innerHTML = `
                 That’s okay 🤍<br><br>
@@ -213,61 +211,46 @@ document.addEventListener("DOMContentLoaded", function() {
                 What matters is spending time together.
             `;
 
-            // Remove the NO option now (we already got the answer)
             noBtn.style.display = "none";
             yesBtn.textContent = "Okay, let's pick another day 🤍";
             yesBtn.style.transform = "scale(1.1)";
             return;
         }
 
-        // Stage 0: playful NO logic
         if (stage === 0) {
             noCount++;
-
             const index = Math.min(noCount - 1, responses.length - 1);
             message.textContent = responses[index];
+            changeGif(sadGifs[Math.min(index, sadGifs.length - 1)]);
 
-            // Change GIF each NO
-            gif.src = sadGifs[Math.min(index, sadGifs.length - 1)];
-
-            // If last message reached, remove NO button
             if (noCount >= responses.length) {
                 noBtn.style.display = "none";
                 yesBtn.style.transform = "scale(1.5)";
-                gif.src = happyGif;
+                changeGif(happyGif);
                 return;
             }
 
-            // Move NO button around (but message stays on top via z-index)
             const randomX = Math.floor(Math.random() * 200) - 100;
             const randomY = Math.floor(Math.random() * 100) - 50;
 
-            noBtn.style.transform = "translate(" + randomX + "px, " + randomY + "px)";
-            yesBtn.style.transform = "scale(" + (1 + noCount * 0.1) + ")";
+            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+            yesBtn.style.transform = `scale(${1 + noCount * 0.1})`;
         }
     });
 
     yesBtn.addEventListener("click", function() {
         spawnHeart();
 
-        // First YES from the Valentine question -> ask availability
         if (stage === 0) {
             showAvailabilityQuestion();
             return;
         }
 
-        // YES on availability question means she is free -> proceed
-        if (stage === 1) {
+        if (stage === 1 || stage === 2) {
             showFinalScreen();
-            return;
-        }
-
-        // After "not free" reassurance -> proceed anyway (your final invite still shows)
-        if (stage === 2) {
-            showFinalScreen();
-            return;
         }
     });
+
 });
 </script>
 
