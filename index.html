@@ -42,6 +42,8 @@ button {
     background: white;
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
 }
 
 #yesBtn {
@@ -55,6 +57,24 @@ button {
     min-height: 30px;
     font-size: 16px;
     color: #888;
+    position: relative;
+    z-index: 2;
+}
+
+/* Floating hearts */
+.heart {
+    position: fixed;
+    bottom: 20px;
+    font-size: 18px;
+    color: #ff6f91;
+    animation: floatUp 3s ease-out forwards;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 0.8; }
+    100% { transform: translateY(-120px) scale(1.4); opacity: 0; }
 }
 </style>
 </head>
@@ -64,13 +84,12 @@ button {
 <div class="container" id="mainContainer">
     <h1>Hi, Babe 🤍</h1>
 
-    <!-- YOUR GIF HERE -->
-    <img src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif" alt="gif">
+    <img id="mainGif" src="https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif" alt="gif">
 
     <p>
         Every 14th has always been ours.
         <br><br>
-        This February 14,
+        This February,
         will you be my Valentine?
     </p>
 
@@ -80,30 +99,25 @@ button {
     <div id="message"></div>
 </div>
 
-<!-- Hidden audio element (fallback controls will be added later if autoplay is blocked) -->
 <audio id="bgAudio" src="pangarap.mp3" preload="auto"></audio>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-
     const noBtn = document.getElementById("noBtn");
     const yesBtn = document.getElementById("yesBtn");
     const message = document.getElementById("message");
     const container = document.getElementById("mainContainer");
     const audio = document.getElementById("bgAudio");
+    const gif = document.getElementById("mainGif");
 
-    // Ensure the audio does NOT loop
     audio.loop = false;
     audio.volume = 0.8;
     audio.playsInline = true;
 
-    // When the audio ends, make sure it stops and resets (no repeat)
-    audio.addEventListener('ended', function() {
-        audio.pause();
-        audio.currentTime = 0;
-        // Optional: show a small message when the song finishes
-        message.textContent = "Song finished playing.";
-    });
+    // 0 = initial Valentine question
+    // 1 = availability question
+    // 2 = after "not free" reassurance (single yes proceeds)
+    let stage = 0;
 
     let noCount = 0;
 
@@ -113,63 +127,66 @@ document.addEventListener("DOMContentLoaded", function() {
         "Nurse ka diba? 🤨",
         "Isa pang NO mo magtatampo na talaga ako 🥺",
         "Bahala ka magtatampo na talaga ako 😤",
-        "Wala ka na magagawa puro ka kasi NO, tinanggal ko na tuloy 😜 Click mo na kasi yung YES!"
+        "Wala ka na magagawa 😜 Click YES na!"
     ];
 
-    noBtn.addEventListener("click", function() {
+    const sadGifs = [
+        "https://media.giphy.com/media/ROF8OQvDmxytW/giphy.gif",
+        "https://media.giphy.com/media/OPU6wzx8JrHna/giphy.gif",
+        "https://media.giphy.com/media/9Y5BbDSkSTiY8/giphy.gif",
+        "https://media.giphy.com/media/ISOckXUybVfQ4/giphy.gif",
+        "https://media1.tenor.com/m/vSx_SAt2dZ4AAAAd/bye.gif"
+    ];
 
-        noCount++;
+    const happyGif = "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif";
 
-        message.textContent = responses[Math.min(noCount - 1, responses.length - 1)];
+    function spawnHeart() {
+        const heart = document.createElement("div");
+        heart.className = "heart";
+        heart.textContent = "🤍";
+        heart.style.left = (Math.random() * 80 + 10) + "vw";
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 3000);
+    }
 
-        // If last message reached, remove NO button
-        if (noCount >= responses.length) {
-            noBtn.style.display = "none";
-            yesBtn.style.transform = "scale(1.5)";
-            return;
-        }
+    function showAvailabilityQuestion() {
+        stage = 1;
 
-        const randomX = Math.floor(Math.random() * 200) - 100;
-        const randomY = Math.floor(Math.random() * 100) - 50;
+        // Make sure NO is available here even if it was previously removed
+        noBtn.style.display = "inline-block";
+        noBtn.style.transform = "translate(0px, 0px)";
+        yesBtn.style.transform = "scale(1)";
 
-        noBtn.style.transform = "translate(" + randomX + "px, " + randomY + "px)";
-        yesBtn.style.transform = "scale(" + (1 + noCount * 0.1) + ")";
-    });
+        yesBtn.textContent = "Yes, I'm free 🤍";
+        noBtn.textContent = "Not that day";
 
-    yesBtn.addEventListener("click", function() {
+        message.innerHTML = `
+            One more thing 🤍<br><br>
+            Are you free on <strong>February 11 (Wednesday)</strong>?
+        `;
+    }
 
-        // Try to play audio immediately as part of the user gesture
-        audio.play().then(() => {
-            // playing succeeded
-            console.log("Audio started");
-        }).catch(err => {
-            // playing blocked or file error
-            console.warn("Audio play failed:", err);
-
-            // Provide a visible fallback so the user can manually start playback
-            message.innerHTML = 'Audio could not autoplay. Tap the play button below if needed.<br><br>' +
-                '<audio controls src="pangarap.mp3" style="margin-top:8px;"></audio>';
-        });
-
-        // Keep the UI transition but do not rely on the timeout to trigger play
+    function showFinalScreen() {
+        audio.play().catch(() => {});
         container.style.opacity = "0";
 
         setTimeout(() => {
-
             container.innerHTML = `
-                <h1 style="color:#ff6f91;">Happy Monthsary & Valentine's 🤍</h1>
+                <h1 style="color:#ff6f91;">Happy Valentine’s & Monthsary in Advance 🤍</h1>
 
-                <p style="max-width:350px; margin:20px auto; line-height:1.7;">
-                    Thank you for loving me the way you do.
-                    I appreciate you more than you know.
-                    <br><br>
-                    This February 14,
-                    I want to take you on a Binondo date.
-                    <br><br>
-                    I love you so much!
-                    <br><br>
-                    02.14 🤍
-                </p>
+<p style="max-width:350px; margin:20px auto; line-height:1.7;">
+    You know we don’t usually celebrate on February 14,
+    because crowded places were never really our thing.
+    <br><br>
+    We’ve always liked going out in the late afternoon —
+    when it’s cooler, calmer, and we can just take our time.
+    <br><br>
+    No fixed plans, no rush.
+    Just walking around Binondo,
+    looking for good food and enjoying the moment together.
+    <br><br>
+    So… <strong>can I take you on a Binondo date?</strong> 🤍
+</p>
 
                 <div class="gallery">
                     <img src="https://anchorland.com.ph/wp-content/uploads/2023/01/shutterstock_1846594648-1-768x513.jpg" alt="image1">
@@ -177,12 +194,80 @@ document.addEventListener("DOMContentLoaded", function() {
                     <img src="https://hungrytwotravel.com/wp-content/uploads/2023/07/Binondo-Chinatown-Manila-eng-bee-tin-1024x683.jpg" alt="image3">
                 </div>
             `;
-
             container.style.opacity = "1";
-
         }, 500);
+    }
+
+    noBtn.addEventListener("click", function() {
+        // If we're on the availability question, NO means "not free"
+        if (stage === 1) {
+            stage = 2;
+
+            gif.src = happyGif;
+
+            message.innerHTML = `
+                That’s okay 🤍<br><br>
+                No pressure at all.
+                We can pick another day that works for you.
+                <br><br>
+                What matters is spending time together.
+            `;
+
+            // Remove the NO option now (we already got the answer)
+            noBtn.style.display = "none";
+            yesBtn.textContent = "Okay, let's pick another day 🤍";
+            yesBtn.style.transform = "scale(1.1)";
+            return;
+        }
+
+        // Stage 0: playful NO logic
+        if (stage === 0) {
+            noCount++;
+
+            const index = Math.min(noCount - 1, responses.length - 1);
+            message.textContent = responses[index];
+
+            // Change GIF each NO
+            gif.src = sadGifs[Math.min(index, sadGifs.length - 1)];
+
+            // If last message reached, remove NO button
+            if (noCount >= responses.length) {
+                noBtn.style.display = "none";
+                yesBtn.style.transform = "scale(1.5)";
+                gif.src = happyGif;
+                return;
+            }
+
+            // Move NO button around (but message stays on top via z-index)
+            const randomX = Math.floor(Math.random() * 200) - 100;
+            const randomY = Math.floor(Math.random() * 100) - 50;
+
+            noBtn.style.transform = "translate(" + randomX + "px, " + randomY + "px)";
+            yesBtn.style.transform = "scale(" + (1 + noCount * 0.1) + ")";
+        }
     });
 
+    yesBtn.addEventListener("click", function() {
+        spawnHeart();
+
+        // First YES from the Valentine question -> ask availability
+        if (stage === 0) {
+            showAvailabilityQuestion();
+            return;
+        }
+
+        // YES on availability question means she is free -> proceed
+        if (stage === 1) {
+            showFinalScreen();
+            return;
+        }
+
+        // After "not free" reassurance -> proceed anyway (your final invite still shows)
+        if (stage === 2) {
+            showFinalScreen();
+            return;
+        }
+    });
 });
 </script>
 
